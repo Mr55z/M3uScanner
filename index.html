@@ -1,263 +1,100 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>M3U Scanner — Frontend</title>
 <style>
   :root{
-    --bg:#0b1220;
-    --panel:#071625;
-    --muted:#9fb3bf;
-    --accent:#0ea5a4;
-    --card:#06121a;
-    --text:#e6eef8;
-    --pill:#0f172a;
+    --bg:#0b1220; --panel:#071625; --muted:#9fb3bf; --accent:#0ea5a4; --card:#06121a; --text:#e6eef8; --pill:#0f172a;
   }
-
-  /* Basic layout */
-  html,body{height:100%}
-  body{
-    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
-    background:var(--bg);
-    color:var(--text);
-    margin:0;
-    padding:20px;
-    -webkit-font-smoothing:antialiased;
-    -moz-osx-font-smoothing:grayscale;
-  }
+  html,body{height:100%;margin:0;padding:20px;font-family:Inter,system-ui,monospace;background:var(--bg);color:var(--text);}
   .wrap{max-width:980px;margin:0 auto}
-
   header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
   h1{margin:0;font-size:1.2rem}
   .header-right{margin-left:auto;color:var(--muted);font-size:0.9rem}
-
-  /* Card */
-  .card{
-    background:var(--card);
-    padding:14px;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.45);
-  }
-
-  /* Controls */
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.45);}
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  input[type=text]{
-    flex:1;
-    padding:12px 14px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,0.03);
-    background:#03121a;
-    color:var(--text);
-    min-height:48px;           /* larger for touch */
-    font-size:16px;
-    box-sizing:border-box;
-  }
-  select, button{
-    padding:11px 14px;
-    border-radius:10px;
-    border:0;
-    background:var(--accent);
-    color:#021014;
-    font-weight:600;
-    cursor:pointer;
-    font-size:15px;
-    min-height:48px;
-  }
+  input[type=text]{flex:1;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:#03121a;color:var(--text);min-height:48px;font-size:16px;box-sizing:border-box;}
+  select,button{padding:11px 14px;border-radius:10px;border:0;background:var(--accent);color:#021014;font-weight:600;cursor:pointer;font-size:15px;min-height:48px;}
   button.secondary{background:#64748b;color:#e6eef8}
-
   .status{font-size:0.95rem;color:var(--muted);margin-top:10px}
   .outwrap{display:flex;gap:12px;margin-top:12px;flex-direction:column}
-  .output{
-    background:#03121a;
-    padding:12px;
-    border-radius:8px;
-    min-height:160px;
-    overflow:auto;
-    color:#cfe;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);
-    border:1px solid rgba(255,255,255,0.02);
-  }
+  .output{background:#03121a;padding:12px;border-radius:8px;min-height:160px;overflow:auto;color:#cfe;box-shadow:inset 0 1px 0 rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);}
   .output pre{white-space:pre-wrap;font-family:monospace;margin:0}
   .actions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
   .link{color:var(--accent);text-decoration:none}
   .iframe-wrap{width:100%;min-height:420px;background:#071018;border-radius:8px;overflow:auto;padding:6px;border:1px solid rgba(255,255,255,0.02)}
-
   .small{font-size:0.85rem;color:var(--muted)}
-
-  @media (max-width:720px){
-    .controls{flex-direction:column;align-items:stretch}
-    input[type=text], select, button{width:100%!important;margin-left:0!important}
-    .iframe-wrap{min-height:520px}
-    body{padding:12px}
-  }
+  @media (max-width:720px){.controls{flex-direction:column;align-items:stretch}input[type=text], select, button{width:100%!important;margin-left:0!important}.iframe-wrap{min-height:520px}body{padding:12px}}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>🔍 M3U Scanner</h1>
-      <div class="header-right small">Worker frontend</div>
-    </header>
-
-    <div class="card">
-      <div class="controls">
-        <input id="url" type="text" inputmode="url" autocomplete="off"
-               placeholder="M3U URL (z. B. http://host:8080/get.php?username=...&password=...)">
-        <select id="format" title="Ausgabeformat">
-          <option value="html">HTML (Dashboard)</option>
-          <option value="text">Plain Text (VΞNGΞANCΞ)</option>
-          <option value="json">JSON (raw)</option>
-        </select>
-        <button id="scan">Scan</button>
-        <button id="openNew" class="secondary" title="Öffnet Ergebnis in neuem Tab">Open</button>
-      </div>
-
-      <div class="status small" id="status">Trage eine URL ein und klicke ‹Scan›. Verwende encodeURIComponent beim Weitergeben langer URLs.</div>
-
-      <div class="outwrap">
-        <div id="htmlContainer" class="iframe-wrap" style="display:none"></div>
-
-        <div id="textContainer" class="output" style="display:none">
-          <pre id="output"></pre>
-        </div>
-
-        <div class="actions">
-          <button id="copy" class="secondary">Kopieren</button>
-          <button id="download" class="secondary">Herunterladen</button>
-          <a id="openRaw" class="link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Direkt öffnen</a>
-        </div>
+<div class="wrap">
+  <header>
+    <h1>🔍 M3U Scanner</h1>
+    <div class="header-right small">Worker-Frontend</div>
+  </header>
+  <div class="card">
+    <div class="controls">
+      <input id="url" type="text" inputmode="url" autocomplete="off" placeholder="M3U URL (z. B. http://host:8080/get.php?username=...&password=...)">
+      <select id="format" title="Ausgabeformat">
+        <option value="html">HTML (Dashboard)</option>
+        <option value="text">Plain Text (VΞNGΞANCΞ)</option>
+        <option value="json">JSON (raw)</option>
+      </select>
+      <button id="scan">Scan</button>
+      <button id="openNew" class="secondary" title="Öffnet Ergebnis in neuem Tab">Open</button>
+    </div>
+    <div class="status small" id="status">Trage eine URL ein und klicke ‹Scan›.</div>
+    <div class="outwrap">
+      <div id="htmlContainer" class="iframe-wrap" style="display:none"></div>
+      <div id="textContainer" class="output" style="display:none"><pre id="output"></pre></div>
+      <div class="actions">
+        <button id="copy" class="secondary">Kopieren</button>
+        <button id="download" class="secondary">Herunterladen</button>
+        <a id="openRaw" class="link" href="#" target="_blank" rel="noopener noreferrer" style="display:none">Direkt öffnen</a>
       </div>
     </div>
   </div>
+</div>
 
 <script>
 (() => {
-  // === ERSETZE HIER mit deiner Worker-URL ===
-  const WORKER_URL = "https://m3usort.elias256.workers.dev"; // <-- ERSETZEN
-  // ==========================================
+  const WORKER_URL = "https://m3usort.elias256.workers.dev"; // Worker URL
+  const urlEl=document.getElementById('url'), outEl=document.getElementById('output');
+  const htmlContainer=document.getElementById('htmlContainer'), textContainer=document.getElementById('textContainer');
+  const statusEl=document.getElementById('status'), formatEl=document.getElementById('format');
+  const openNewBtn=document.getElementById('openNew'), copyBtn=document.getElementById('copy');
+  const downloadBtn=document.getElementById('download'), openRaw=document.getElementById('openRaw');
 
-  const urlEl = document.getElementById('url');
-  const outEl = document.getElementById('output');
-  const htmlContainer = document.getElementById('htmlContainer');
-  const textContainer = document.getElementById('textContainer');
-  const statusEl = document.getElementById('status');
-  const formatEl = document.getElementById('format');
-  const openNewBtn = document.getElementById('openNew');
-  const copyBtn = document.getElementById('copy');
-  const downloadBtn = document.getElementById('download');
-  const openRaw = document.getElementById('openRaw');
+  try{const last=localStorage.getItem('m3u_last_url');if(last)urlEl.value=last}catch(e){}
 
-  // restore last URL if available
-  try { const last = localStorage.getItem('m3u_last_url'); if (last) urlEl.value = last; } catch(e){}
-
-  function setStatus(s, isError=false){
-    statusEl.textContent = s;
-    statusEl.style.color = isError ? '#ff7b7b' : '';
-  }
-
-  function buildWorkerFetchUrl(target, format){
-    return `${WORKER_URL}?url=${encodeURIComponent(target)}&format=${encodeURIComponent(format)}`;
-  }
+  function setStatus(s,isErr=false){statusEl.textContent=s;statusEl.style.color=isErr?'#ff7b7b':'';}
+  function buildWorkerFetchUrl(target,format){return `${WORKER_URL}?url=${encodeURIComponent(target)}&format=${encodeURIComponent(format)}`;}
 
   async function scan(){
-    const url = urlEl.value.trim();
-    if (!url) { alert('Bitte eine URL eingeben!'); return; }
-    try { localStorage.setItem('m3u_last_url', url); } catch(e){}
-    const fmt = formatEl.value;
-    const workerFetch = buildWorkerFetchUrl(url, fmt);
+    const url=urlEl.value.trim(); if(!url){alert('Bitte eine URL eingeben!');return;}
+    try{localStorage.setItem('m3u_last_url',url);}catch(e){}
+    const fmt=formatEl.value, workerFetch=buildWorkerFetchUrl(url,fmt);
     setStatus('⏳ Scanne — warte auf Antwort vom Worker ...');
+    htmlContainer.style.display='none'; textContainer.style.display='none'; outEl.textContent=''; openRaw.style.display='none'; openRaw.href='#';
 
-    // reset UI
-    htmlContainer.style.display = 'none';
-    textContainer.style.display = 'none';
-    outEl.textContent = '';
-    openRaw.style.display = 'none';
-    openRaw.href = '#';
-
-    try {
-      const res = await fetch(workerFetch, { method: 'GET', credentials: 'omit' });
-      if (!res.ok) {
-        let txt = await res.text().catch(()=>String(res.status));
-        setStatus(`❌ Fehler: ${res.status} — ${txt}`, true);
-        return;
-      }
-
-      if (fmt === 'html') {
-        const html = await res.text();
-        htmlContainer.innerHTML = html;
-        htmlContainer.style.display = 'block';
-        setStatus('✅ Fertig — Dashboard gerendert');
-        openRaw.href = buildWorkerFetchUrl(url, 'html');
-        openRaw.style.display = 'inline';
-      } else if (fmt === 'text') {
-        const txt = await res.text();
-        outEl.textContent = txt;
-        textContainer.style.display = 'block';
-        setStatus('✅ Fertig — Textausgabe');
-        openRaw.href = buildWorkerFetchUrl(url, 'text');
-        openRaw.style.display = 'inline';
-      } else {
-        const j = await res.json();
-        outEl.textContent = JSON.stringify(j, null, 2);
-        textContainer.style.display = 'block';
-        setStatus('✅ Fertig — JSON erhalten');
-        openRaw.href = buildWorkerFetchUrl(url, 'json');
-        openRaw.style.display = 'inline';
-      }
-    } catch (err) {
-      setStatus('❌ Fehler: ' + (err.message || err), true);
-    }
+    try{
+      const res=await fetch(workerFetch,{method:'GET',credentials:'omit'});
+      if(!res.ok){let txt=await res.text().catch(()=>String(res.status)); setStatus(`❌ Fehler: ${res.status} — ${txt}`,true); return;}
+      if(fmt==='html'){const html=await res.text(); htmlContainer.innerHTML=html; htmlContainer.style.display='block'; setStatus('✅ Fertig — Dashboard gerendert'); openRaw.href=buildWorkerFetchUrl(url,'html'); openRaw.style.display='inline';}
+      else if(fmt==='text'){const txt=await res.text(); outEl.textContent=txt; textContainer.style.display='block'; setStatus('✅ Fertig — Textausgabe'); openRaw.href=buildWorkerFetchUrl(url,'text'); openRaw.style.display='inline';}
+      else{const j=await res.json(); outEl.textContent=JSON.stringify(j,null,2); textContainer.style.display='block'; setStatus('✅ Fertig — JSON erhalten'); openRaw.href=buildWorkerFetchUrl(url,'json'); openRaw.style.display='inline';}
+    }catch(err){setStatus('❌ Fehler: '+(err.message||err),true);}
   }
 
-  document.getElementById('scan').addEventListener('click', scan);
-
-  formatEl.addEventListener('change', ()=>{
-    outEl.textContent='';
-    htmlContainer.style.display='none';
-    textContainer.style.display='none';
-    openRaw.style.display='none';
-  });
-
-  openNewBtn.addEventListener('click', ()=>{
-    const url = urlEl.value.trim();
-    if (!url) return alert('Bitte eine URL eingeben!');
-    window.open(buildWorkerFetchUrl(url, formatEl.value), '_blank', 'noopener');
-  });
-
-  copyBtn.addEventListener('click', async ()=>{
-    const fmt = formatEl.value;
-    let text = '';
-    if (fmt === 'html') text = htmlContainer.innerHTML || '';
-    else text = outEl.textContent || '';
-    if (!text) return alert('Keine Ausgabe zum Kopieren vorhanden.');
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus('✅ In die Zwischenablage kopiert');
-    } catch (e) {
-      setStatus('❌ Kopieren fehlgeschlagen: ' + (e.message||e), true);
-    }
-  });
-
-  downloadBtn.addEventListener('click', ()=>{
-    const fmt = formatEl.value;
-    let content = '';
-    let ext = 'txt';
-    if (fmt === 'html') { content = htmlContainer.innerHTML || ''; ext = 'html'; }
-    else if (fmt === 'json') { content = outEl.textContent || ''; ext = 'json'; }
-    else { content = outEl.textContent || ''; ext = 'txt'; }
-
-    if (!content) return alert('Keine Ausgabe zum Herunterladen vorhanden.');
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `m3u_scan_result.${ext}`;
-    a.click();
-    setStatus('✔️ Download gestartet');
-  });
-
-  // Enter = scan
-  urlEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ scan(); } });
+  document.getElementById('scan').addEventListener('click',scan);
+  formatEl.addEventListener('change',()=>{outEl.textContent='';htmlContainer.style.display='none';textContainer.style.display='none';openRaw.style.display='none';});
+  openNewBtn.addEventListener('click',()=>{const url=urlEl.value.trim(); if(!url)return alert('Bitte eine URL eingeben!'); window.open(buildWorkerFetchUrl(url,formatEl.value),'_blank','noopener');});
+  copyBtn.addEventListener('click',async()=>{const fmt=formatEl.value;let text='';if(fmt==='html')text=htmlContainer.innerHTML||'';else text=outEl.textContent||''; if(!text)return alert('Keine Ausgabe zum Kopieren vorhanden.'); try{await navigator.clipboard.writeText(text);setStatus('✅ In die Zwischenablage kopiert');}catch(e){setStatus('❌ Kopieren fehlgeschlagen: '+(e.message||e),true);}});
+  downloadBtn.addEventListener('click',()=>{const fmt=formatEl.value;let content='',ext='txt'; if(fmt==='html'){content=htmlContainer.innerHTML||'';ext='html';}else if(fmt==='json'){content=outEl.textContent||'';ext='json';}else{content=outEl.textContent||'';ext='txt';} if(!content)return alert('Keine Ausgabe zum Herunterladen vorhanden.'); const blob=new Blob([content],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`m3u_scan_result.${ext}`;a.click(); setStatus('✔️ Download gestartet');});
+  urlEl.addEventListener('keydown',(e)=>{if(e.key==='Enter'){scan();}});
 })();
 </script>
 </body>
